@@ -1,2 +1,2 @@
-# mongo-rest
+# mongohub
 Restful API for MongoDB
