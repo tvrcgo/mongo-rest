@@ -4,6 +4,7 @@ var mongoID = require('mongodb').ObjectID;
 var koa = require('koa');
 var router = require('koa-trie-router');
 var mount = require('koa-mount')
+var parse = require('co-body');
 
 var mongo = null;
 var rest = koa();
@@ -13,25 +14,37 @@ rest.use(router(rest));
  * Routes
  */
 rest.route('/class/:clazz')
-.get(function* (next){
-	this.body = yield find(this.params.clazz, {});
-})
-.post(function* (next){
-	var postData = { 'username':'weiss', 'password':'fjiw883hfjkspiasd;if' };
-	var result = yield insert(this.params.clazz, postData);
-	this.body = "done.";
-});
+	.get(function* (next){
+		this.body = yield find(this.params.clazz, {});
+	})
+	.post(function* (next){
+		var body = yield parse.json(this);
+		var result = yield insert(this.params.clazz, body);
+		this.body = result;
+	});
 
 rest.route('/class/:clazz/object/:id')
+	.get(function* (next){
+		var result = yield find(this.params.clazz, { _id: mongoID(this.params.id) });
+		if (result.length) {
+			this.body = result[0];
+		}
+		else {
+			this.body = { error:'object not exist.', id: this.params.id };
+		}
+	})
+	.delete(function* (next){
+		var result = yield remove(this.params.clazz, { _id: mongoID(this.params.id) });
+		this.body = result;
+	});
+
+rest.route('/class/:clazz/list/:list')
 .get(function* (next){
-	var result = yield find(this.params.clazz, { _id: mongoID(this.params.id) });
-	if (result.length) {
-		this.body = result[0];
-	}
-	else {
-		this.body = { error:'object not exist.', id: this.params.id };
-	}
-});
+
+})
+.post(function* (next){
+
+})
 
 /**
  * Mongo functions
@@ -77,8 +90,16 @@ function* insert(collection, objects){
 
 function* update(){}
 function* append(){}
-function* remove(collection, condition){
 
+function* remove(collection, condition){
+	var ret;
+	yield function(done) {
+		mongo.collection(collection).remove(condition, function(err, result){
+			ret = result;
+			done(err);
+		})
+	}
+	return ret;
 }
 
 /* thunkify */
