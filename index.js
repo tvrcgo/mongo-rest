@@ -39,12 +39,15 @@ rest.route('/class/:clazz/object/:id')
 	});
 
 rest.route('/class/:clazz/list/:list')
-.get(function* (next){
-
-})
-.post(function* (next){
-
-})
+	.get(function* (next){
+		var result = yield find(this.params.clazz, { _list: this.params.list });
+		this.body = result;
+	})
+	.post(function* (next){
+		var body = yield parse.json(this);
+		body._list = this.params.list;
+		var result = yield insert(this.params.clazz, body);
+	})
 
 /**
  * Mongo functions
