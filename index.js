@@ -3,11 +3,13 @@ var mongocli = require("mongodb").MongoClient;
 var mongoID = require('mongodb').ObjectID;
 var koa = require('koa');
 var router = require('koa-trie-router');
-var mount = require('koa-mount')
+var mount = require('koa-mount');
 var parse = require('co-body');
+var qs = require('koa-qs');
 
 var mongo = null;
 var rest = koa();
+qs(rest, 'first');
 rest.use(router(rest));
 
 /**
@@ -15,7 +17,7 @@ rest.use(router(rest));
  */
 rest.route('/class/:clazz')
 	.get(function* (next){
-		this.body = yield find(this.params.clazz, {});
+		this.body = yield find(this.params.clazz);
 	})
 	.post(function* (next){
 		var body = yield parse.json(this);
@@ -53,6 +55,7 @@ rest.route('/class/:clazz/list/:list')
 		var body = yield parse.json(this);
 		body._list = this.params.list;
 		var result = yield insert(this.params.clazz, body);
+		this.body = result;
 	})
 
 /**
@@ -89,8 +92,17 @@ function* find(collection, condition){
 }
 
 function* insert(collection, objects){
+	if (!collection || !objects)	return;
 	var ret;
 	yield function(done){
+		if (objects.length) {
+			objects.forEach(function(obj){
+				obj._create_time = +new Date;
+			})
+		}
+		if (typeof objects === 'object') {
+			objects._create_time = +new Date;
+		}
 		mongo.collection(collection).insert(objects, function(err, result){
 			ret = result;
 			done(err);
