@@ -58,6 +58,14 @@ rest.route('/class/:clazz/list/:list')
 		this.body = result;
 	})
 
+rest.use(function *notFound(next){
+	if (this.status == 404){
+		this.body = { error:'rules not support.', version:'1.0' };
+	}
+	else {
+		yield next;
+	}
+})
 /**
  * Mongo functions
  */
@@ -73,6 +81,7 @@ function* connect(url){
 }
 
 function* find(collection, condition){
+	if (!collection)	return;
 	condition = condition || {};
 	var _orderby = condition._order || -1;
 	var _size = condition._size || 20;
@@ -115,6 +124,7 @@ function* update(){}
 function* append(){}
 
 function* remove(collection, condition){
+	if (!collection || !condition)	return;
 	var ret;
 	yield function(done) {
 		mongo.collection(collection).remove(condition, function(err, result){
