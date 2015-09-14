@@ -1,7 +1,7 @@
 # mongohub
 Restful API for MongoDB.
 
-### Usage
+## Usage
 
 #### koa deploy
 ```js
@@ -16,8 +16,9 @@ app.use(mongohub({
 }));
 ```
 
-#### http route rules
+## Rules
 ```
 http://localhost/class/:class
 http://localhost/class/:class/object/:objectID
+http://localhost/class/:class/list/:list
 ```

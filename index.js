@@ -25,7 +25,7 @@ rest.route('/class/:clazz')
 
 rest.route('/class/:clazz/object/:id')
 	.get(function* (next){
-		var result = yield find(this.params.clazz, { _id: mongoID(this.params.id) });
+		var result = yield find(this.params.clazz, { _id: mongoID(this.params.id), _size:1 });
 		if (result.length) {
 			this.body = result[0];
 		}
@@ -65,7 +65,9 @@ function* connect(url){
 
 function* find(collection, condition){
 	condition = condition || {};
-	var cursor = mongo.collection(collection).find(condition);
+	var _orderby = condition._order || -1;
+	var _size = condition._size || 20;
+	var cursor = mongo.collection(collection).find(condition).sort({ _id: _orderby }).limit(_size);
 	var list = [];
 	yield function(done){
 		cursor.each(function(err, doc){
