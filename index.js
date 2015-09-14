@@ -25,7 +25,13 @@ rest.route('/class/:clazz')
 
 rest.route('/class/:clazz/object/:id')
 	.get(function* (next){
-		var result = yield find(this.params.clazz, { _id: mongoID(this.params.id), _size:1 });
+
+		if (this.params.id.length !== 24) {
+			this.body = { error:'mongoId error', id: this.params.id };
+			return;
+		}
+
+		var result = yield find(this.params.clazz, { _id: mongoID(this.params.id) });
 		if (result.length) {
 			this.body = result[0];
 		}
