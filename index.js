@@ -29,9 +29,9 @@ rest.route('/class/:clazz')
 
 rest.route('/class/:clazz/object/:id')
 	.get(function* (next){
-
+		// objectID length must eq to 24
 		if (this.params.id.length !== 24) {
-			this.body = { error:'mongoId error', id: this.params.id };
+			this.body = { error:'ObjectId error', id: this.params.id };
 			return;
 		}
 
@@ -42,6 +42,14 @@ rest.route('/class/:clazz/object/:id')
 		else {
 			this.body = { error:'object not exist.', id: this.params.id };
 		}
+	})
+	.put(function* (){ // replace object
+		var json = yield parse.json(this);
+		this.body = yield update(this.params.clazz, { _id: mongoID(this.params.id) }, json, true);
+	})
+	.patch(function* (){ // update object
+		var json = yield parse.json(this);
+		this.body = yield update(this.params.clazz, { _id: mongoID(this.params.id) }, json);
 	})
 	.delete(function* (next){
 		var result = yield remove(this.params.clazz, { _id: mongoID(this.params.id) });
@@ -93,13 +101,9 @@ function* find(collection, condition, options){
 	var cursor = mongo.collection(collection).find(condition).sort({ _id: _orderby }).limit(_size);
 	var list = [];
 	yield function(done){
-		cursor.each(function(err, doc){
-			if (doc) {
-				list.push(doc);
-			}
-			else{
-				done(err);
-			}
+		cursor.toArray(function(err, docs){
+			list = docs;
+			done(err);
 		});
 	};
 	return list;
@@ -125,8 +129,20 @@ function* insert(collection, objects){
 	return ret;
 }
 
-function* update(){}
-function* append(){}
+function* update(collection, query, update, replace){
+	if (!collection || !query || !update)	return;
+	if (!replace) {
+		update = { $set: update };
+	}
+	var ret;
+	yield function(done) {
+		mongo.collection(collection).update(query, update, function(err, result){
+			ret = result;
+			done(err);
+		})
+	}
+	return ret;
+}
 
 function* remove(collection, condition){
 	if (!collection || !condition)	return;
