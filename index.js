@@ -17,7 +17,9 @@ rest.use(router(rest));
  */
 rest.route('/class/:clazz')
 	.get(function* (next){
-		this.body = yield find(this.params.clazz);
+		var size = parseInt(this.query._size);
+		var order = (this.query._order == "asc") ? 1 : -1;
+		this.body = yield find(this.params.clazz, {}, { _size: size, _order: order });
 	})
 	.post(function* (next){
 		var body = yield parse.json(this);
@@ -48,7 +50,9 @@ rest.route('/class/:clazz/object/:id')
 
 rest.route('/class/:clazz/list/:list')
 	.get(function* (next){
-		var result = yield find(this.params.clazz, { _list: this.params.list });
+		var size = parseInt(this.query._size);
+		var order = (this.query._order == "asc") ? 1 : -1;
+		var result = yield find(this.params.clazz, { _list: this.params.list }, { _size: size, _order: order });
 		this.body = result;
 	})
 	.post(function* (next){
@@ -80,11 +84,12 @@ function* connect(url){
 	return mongo;
 }
 
-function* find(collection, condition){
+function* find(collection, condition, options){
 	if (!collection)	return;
 	condition = condition || {};
-	var _orderby = condition._order || -1;
-	var _size = condition._size || 20;
+	options = options || {};
+	var _orderby = options._order || -1;
+	var _size = options._size || 20;
 	var cursor = mongo.collection(collection).find(condition).sort({ _id: _orderby }).limit(_size);
 	var list = [];
 	yield function(done){
