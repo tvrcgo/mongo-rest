@@ -156,11 +156,13 @@ function* remove(collection, condition){
 	return ret;
 }
 
-function* ensureIndex(collection){
+function* expireIndex(collection){
 	if (!collection)	return;
-	mongo.collection(collection).ensureIndex({ _expire:1 }, { expireAfterSeconds:0 }, function(err, ret){
-		console.log(err, ret);
-	});
+	yield function(done) {
+		mongo.collection(collection).createIndex({ _expire:1 }, { expireAfterSeconds:0 }, function(err, ret){
+			done(err);
+		});
+	}
 }
 
 /* thunkify */
