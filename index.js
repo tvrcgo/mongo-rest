@@ -190,7 +190,9 @@ function thunkify(fn){
 module.exports = function(options){
 	options = options || {};
 	return function*(next){
-		mongo = yield connect(options.store||options.url);
+		if (!mongo) {
+			mongo = yield connect(options.store||options.url);
+		}
 		yield mount(options.route || '/', rest);
 	};
 };
